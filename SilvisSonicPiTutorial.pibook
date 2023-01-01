@@ -1,0 +1,587 @@
+> Play this document as a notebook with the [Sonic Pi Extension for VS Code](https://marketplace.visualstudio.com/items?itemName=jakearl.vscode-sonic-pi
+
+
+
+# Silvis Sonic Pi Tutorial
+## To Do
+- Weitermachen mit Verzweigungen / If
+- Weitermachen mit live_loop do
+- Collections: Arrays, Maps, Rings
+- Zufall in Sonic Pi
+- Modularisierung
+- Externe Samples
+- Midi
+## Sonic Pi in Visual Studio Code
+Die Extension **Sonic Pi Extension v0.1.0** von s00500 installieren. Achtung, mit Version 4 von Sonic Pi oder höher funktioniert die viel öfter installierte Extension "Sonic Pi" von Jackson Kearl nicht mehr.
+
+Quelle: https://marketplace.visualstudio.com/items?itemName=s00500.sonic-pi-extension&ssr=false#review-details
+
+Damit die Extension von s00500 funktioniert, muss auf jeden Fall die neueste Version von Sonic Pi, z.B. 4.3, installiert sein. Ausserdem muss in den Settings der Pfad von Sonic Pi gesetzt werden, z.B.:
+
+C:\Program Files\Sonic Pi\app\
+
+In Visual Studio Code müssen die Sonic Pi Dateien die Endung **.pi** haben, damit sie abgespielt werden.
+
+In einem Jupyter-Notebook können die Sonic Pi Schnippsel mit dem Run-Icon links vom Code-Block abgespielt werden. Das Stoppen über dieses Icon funktioniert nicht immer. **Alt + S** oder **Ctrl + Shift + P - Sonic Pi: Stop** funktioniert dagegen fast immer. Falls das auch nicht funktioniert, Visual Studio Code schliessen und notfalls sogar alle VSC-Instanzen im Task Manager stoppen.
+
+## Basics
+
+Die Programmiersprache hinter Sonic Pi ist **Ruby**. Sehr viele Sprachelemente von Ruby können in Sonic Pi verwendet werden, manchmal gibt es allerdings feine Unterschiede in der Syntax. 
+
+Sonic Pi erzeugt synthetische Klänge nicht selbst, sonst greift dafür auf den **Software-Synthesizer SuperCollider** zu, der bei der Installation von Sonic Pi mitinstalliert wird.
+
+Sonic Pi benutzt zwei Elemente, um Musik zu erzeugen
+- Synth: ein synthetisch generierter Klang oder ein Instrument, gespielt mit dem Befehl play (Klang bzw. Instrument von SuperCollider erzeugt)
+- Sample: eine aufgezeichnete Klangdatei im .flac-Format
+```
+play :C4
+```
+
+```
+sample :loop_garzul
+```
+Doch bevor wir uns Synth und Sample vertieft widmen, schauen wir uns die Kommentare und die Ausgabe von Text an. Beides ist wichtig, um Code zu verstehen und für andere verständlich zu halten
+### Kommentare
+
+Kommentare macht man, um den Code verständlicher zu machen, für andere und für sich selbst. Kommentare werden nicht ausgeführt. Kommentare in Sonic Pi fangen mit # an. Das # kann am Anfang der Zeile stehen, aber auch erst in der Zeile drin. Dann wird die Zeile vom Kommentar-Zeichen an nicht mehr ausgeführt.
+```
+# Das ist ein Kommentar -> Diese Zeile wird gar nicht ausgeführt
+play 60 # spielt C4 ab
+```
+### Variablen, Konstanten und Symbols
+Jede Programmiersprache kennt Variablen. Variablen sind benannte Behälter, in die man irgendwelche Werte ablegen kann, z.B. Noten, Namen von Samples, Zahlenwerte für Sleep oder was auch immer. Im folgenden Beispiel weisen wir der Variable mit dem von uns gewählten Namen g_sleep mit einem Gleichzeigen den Wert 0.5 zu:
+
+`g_sleep = 0.5`
+
+Anschliessend spielen wir mehrere Noten hintereinander getrennt durch sleep. Statt dass wir jedes mal 0.5 schreiben, verwenden wir die Variable, die bei der Ausführung durch den zugewiesenen Wert ersetzt wird. Spiel nun die Codezeilen ab. Bis jetzt haben wir nichts gewonnen, g_sleep zu schreiben dauert länger als den Wert 0.5 hinter sleep zu setzen. Einen Vorteil haben wir erst, wenn wir den Wert ändern möchten. Mit einer Variable ändern wir einfach den zugewiesenen Wert einam, z.B. in 1 oder 0.25, und schon werden unsere 3 Töne schneller oder langsamer abgespielt, ohne dass wir jedes einzelne Sleep-Zeile ändern müssen.
+```
+g_sleep = 0.5
+
+play :C4
+sleep g_sleep
+
+play :G4
+sleep g_sleep
+
+play :F4
+sleep g_sleep
+```
+### Textausgabe mit print oder puts
+Um einen Wert auszugeben gibt es den Befehl `print` bzw. `puts`. **Text** setzt man für die Ausgabe in **doppelte Anführungszeichen**.
+```
+# hier wird ein Text ausgegeben
+print "Hallo"
+
+# Hier gibt man eine Zahl aus
+print 20
+
+# Man kann auch das Resultat einer Berechnung ausgeben
+print 2*3
+```
+Text und Zahlen kann man nicht wie in gewissen Programmiersprachen direkt aneinanderhängen und ausgeben:
+```
+# Dieser Code funktioniert nicht!
+print "2 + 3 = " + (2+3)
+```
+Es gibt 2 Lösungen für dieses Problem:
+1) Man wandelt die Zahlen in Text um. In Programmiersprachen nennt man man ein Stück Text einen String. In Ruby wandelt man eine Zahl in einen Text um, indem man `.to_s` anhängt.
+```
+print "2 * 3 = " + (2*3).to_s
+```
+2) Man bettet die Zahlen mit #{} in einen String ein. Dies empfiehlt sich v.a., wenn man an mehreren Stellen Zahlen ausgeben möchte.
+```
+print "2 * 3 = #{2*3}"
+```
+### Synth
+
+Eine Note spielt man mit `play`. Der Ton kann als Notenwert oder als Midi-Wert angegeben werden, z.B. `:E3` oder `60` (C4).
+
+Als Notenwert:
+```
+play :C4
+```
+Als Midi-Wert:
+```
+play 60
+```
+Zweimal `play` hintereinander führt dazu, dass die zwei Noten gleichzeitig ausgeführt werden:
+```
+play :C4
+play :E4
+```
+Wenn Noten hintereinander gespielt werden sollen, dann muss man zwischen den einzelnen Noten jedes mal ein `sleep` gefolgt von einer Zahl, welche einen Bruchteil oder ein Vielfaches eines Taktes angibt und damit den zeitlichen Abstand vom Beginn eines Tones zum Beginn des nächsten. Das ist nicht gleichzusetzen mit der Tonlänge, denn Töne können kürzer als das Sleep sein, was zu einer Art Staccato führt. Wenn die Tonlänge länger als Sleep ist, dann überlagern sich verschiedene Töne. Die effektive Tonlänge hängt ab vom verwendeten Synth (dazu gleich mehr) und der Hüllkurve, mit der wir uns in einem späteren Abshcnitt beschäftigen.
+```
+play :C4
+sleep 1
+play :E4
+sleep 0.5
+play :G4
+```
+Der Klang einer Note lässt sich verändern, indem man mit `use_synth` ein anderes Timbre bzw. eine andere Klangfarbe auswählt. Bei 
+```
+use_synth :sine
+play :C4
+sleep 1
+use_synth :saw
+play :C4
+```
+#### Optionen für Synths
+Es gibt für `play` ganz viele weitere Optionen ausser der Klangfarbe und der Notenhöhe, mit denen sich die gespielte Note verändern lässt. Die wichtigsten sind wohl die Lautstärke mit `amp:` für Amplitude und `pan:`, mit dem man einstellen kann, ob der Klang von links (-1), von rechts (1) oder aus der Mitte kommt.
+```
+# ganz leise
+play :C4, amp: 0.2
+sleep 1
+# normal laut
+play :C4, amp: 1
+sleep 1
+# ziemlich laut
+play :C4, amp: 1.8
+sleep 2
+
+# Ton kommt von links
+play :C4, pan: -1
+sleep 1
+# Ton kommt aus der Mitte
+play :C4, pan: 0
+sleep 1
+# Ton kommt von rechts
+play :C4, pan: 1
+sleep 1
+
+# und kombiniert
+play :C4, pan: -1, amp: 2
+sleep 1
+```
+#### Hüllkurven und ADSR
+Wenn Klänge mit einem Synthesizer erzeugt werden, dann kann man sie mit einer Hüllkurve verändern. Die Hüllkurve bestimmt, wie sich die Lautstärke eines Tons über die Zeit ändert. Oft hört man auch den Begriff ADSR. Er steht für die 4 Phasen Attack, Decay, Sustain und Release. Hüllkurven gibt es übrigens auch bei den Samples.
+```
+# File: sr_lang_adsr.txt
+
+use_synth :saw
+
+# Default-Hüllkurve
+play :C4, amp: 2
+sleep 2
+
+# Nur Sustain, alles andere auf 0, kein Ein- und Ausschwingen
+play :C4, amp: 2, attack: 0, decay: 0, sustain: 1, release: 0
+sleep 1.5
+
+
+# An- und gleich wieder abschwellend
+play :C4, amp: 2, attack: 2, decay: 0, sustain: 0, release: 2
+sleep 5
+
+# ganz kurz, schon fast schlagzeugmässig
+play :C4, amp: 2, attack: 0, decay: 0.05, sustain: 0, release: 0
+sleep 1
+
+# Alle Werte inklusive Levels gesetzt
+play :C4, attack: 0.1, attack_level: 2, decay: 1, sustain_level: 0.3, sustain: 1, release: 1
+sleep 3
+
+use_synth :noise
+# Default-Huellkurve
+play :C4, amp: 2
+sleep 2
+
+# An- und gleich wieder abschwellend
+play :C4, amp: 2, attack: 2, decay: 0, sustain: 0, release: 2
+sleep 5
+
+# ganz kurz, schon fast schlagzeugmässig
+play :C4, amp: 2, attack: 0, decay: 0.05, sustain: 0, release: 0
+sleep 1
+```
+### Sample
+Um ein Sample abzuspielen, schreibt man `sample` gefolgt vom Namen des Samples, z.B. `:loop_amen`. Die vorhandenen Samples in Sonic Pi beginnen immer mit einem Doppelpunkt.
+```
+sample :loop_amen
+```
+Ein Sample hat eine Originallänge. Wenn man zwei Samples hintereinander abspielen möchte ohne dass sie sich überschneiden, dann muss man dazwischen ein sleep setzen, das mindestens so lange ist, wie das Sample selbst. Die Länge eines Samples kann man mit der Funktion `sample_duration` feststellen.
+```
+# spiel das erste Sample
+sample :guit_e_fifths
+
+# warte solange, bis das Sample zu Ende ist
+sleep sample_duration(:guit_e_fifths)
+
+# kurze zusätzlich Pause
+sleep 0.125
+
+# spiel das zweite Sample
+sample :ambi_haunted_hum
+```
+Samples haben ähnliche Optionen wie `play`, es gibt `amp:` für die Lautstärke, `pan:` für die Richtung, und Hüllkurven. Sie haben aber zusätzliche Optionen, damit die Länge des Samples mit anderen Samples oder Synths zu synchronisieren. Mit `rate` kann man die Abspielgeschwindigkeit um einen Faktor erhöhen oder verlangsamen. Dies hat einen Einfluss auf die Tonhöhe. Wenn man die Rate erhöht, wird der Ton höher und die Abspielzeit kürzer. Mit `beat_stretch:` gibt man die gewünschte Länge in Takten oder Schlägen an. Dies führt dazu, dass die Tonhöhe höher oder tiefer wird. Mit `pitch_stretch:` gibt man ebenfalls die gewünschte Länge in Takten an, aber bei dieser Option wird die Tonhöhe möglichst gleich belassen:
+```
+# so lange ist das Sample ohne Manipulation
+print sample_duration(:guit_e_fifths )
+
+sample :guit_e_fifths , rate: 1
+sleep sample_duration(:guit_e_fifths )
+
+sleep 0.25
+
+# Rate verdoppeln -> Ton des Samples wird höher und Sample halb so lang
+sample :guit_e_fifths , rate: 2
+sleep sample_duration(:guit_e_fifths ) / 2.0
+
+sleep 0.25
+
+# dehne den Sample auf 4 Takte, aber behalte Tonhöhe
+sample :guit_e_fifths , pitch_stretch: 4
+sleep 4
+
+sleep 0.25
+
+# dehne den Sample auf 4 Takte mit Anpassung der Tonhöhe
+sample :guit_e_fifths , beat_stretch: 4
+sleep 4
+
+sleep 0.25
+
+# verkürze den Sample auf 2 Takte, aber behalte Tonhöhe
+sample :guit_e_fifths , pitch_stretch: 2
+sleep 2
+
+sleep 0.25
+
+# verkürze den Sample auf 2 Takte, aber behalte Tonhöhe
+sample :guit_e_fifths, beat_stretch: 2
+sleep 2
+```
+## Musiktheorie
+### Notennamen
+Eine normale C-Dur-Tonleiter besteht im deutschen Sprachraum aus den 7 Tönen C, D, E, F, G, A, H. Der Abstand zwischen diesen Tönen beträgt ein Ganzton mit Ausnahme von E zu F und H zu C, wo es nur ein Halbton ist.
+
+Sonic Pi stammt aus dem **englischen Sprachraum**. Dort wird die **Note H als B** bezeichnet, und das was wir als **B** kennen als **Bb**.
+Eine C-Dur-Tonleiter besteht deshalb in Sonic Pi aus den folgenden Tönen:
+
+:C, :D, :E, :F, :G, :A, :B
+
+Normalerweise gibt man noch die Oktave dazu an, z.B. :G3 oder :A4
+```
+use_synth :saw
+play :C3
+sleep 0.5
+play :D3
+sleep 0.5
+play :E3
+sleep 0.5
+play :F3
+sleep 0.5
+play :G3
+sleep 0.5
+play :A3
+sleep 0.5
+play :B3
+sleep 0.5
+# Hier fängt die nächst Oktave an
+play :C4
+sleep 0.5
+```
+### Notennamen für Halbtöne
+Während die Notennamen für die Ganztöne einigermassen klar sind, gibt es für die Halbtöne immer zwei Varianten: Eine Erhöhung vom unteren Ton, im Englischen Sharp genannt, führt zu einem Postfix s. Soll der Ton um einen Halbton vermindert werden, dann gibt es das Präfix b. `:Cs` und `:Db` ergeben also die gleiche Tonhöhe.
+```
+use_synth :saw
+
+# Spiele ein Cis
+play :Cs3
+sleep 1
+# Das Des tönt genau gleich
+play :Db3
+sleep 1
+
+# Das deutsche B wird zu :Bb3
+play :Bb3
+sleep 1
+
+# :Bb3 ist dasselbe wie :As3
+play :As3
+sleep 1
+```
+Die Notennamen können auch **klein geschrieben** werden, z.B. `:a5`:
+```
+use_synth :saw
+play :a5
+sleep 1
+```
+### Notennamen, Midi-Werte und Hertz
+Bis jetzt haben wir Noten v.a. über ihren Notennamen angesprochen. Man kann die Töne aber auch direkt als Ganzzahlen angeben. Dabei handelt sich um sogenannte Midiwerte. Die Midiwerte geben Halbtonschritte an: `:C4` entspricht 60, der Halbton `:Cs4` dem Midiwert 61 und `:D` dann 62. Eine **Oktave besteht aus 12 Halbtönen**. Midiwerte müssen übrigens nicht ganzzahlig sein, so etwas wie `play 62.5` ist erlaubt, d.h. wird sind jetzt einen Viertelton über :D4.
+```
+play 60 # :C4
+sleep 1
+play 61 # :Cs4
+sleep 1
+play 62 # :D4
+sleep 1
+# Midiwerte sind nicht auf Ganzzahlen beschränkt, mit Dezimalzahlen kommt man zu ganz schrägen Stimmungen und Harmonien
+play 62.5
+sleep 1
+```
+Der hörbare Bereich ist in Sonic Pi abhängig vom verwendeten Synth und geht etwa von 0 (:C-1) bis 120 (:C9). 
+```
+# Mit :saw hört man deutlich mehr Töne als z.B. mit :sine
+use_synth :saw 
+
+# hier hört man nur ein dumpfes Knattern
+play 0  # :C-1
+sleep 1
+
+# eine Oktave höher ist das Knattern schon deutlich schneller
+play 12 # :C0
+sleep 1
+
+# erst 2 Oktaven höher wird das Knattern zu einem Ton
+play 36 # :C2
+sleep 1
+
+# die Oktaven 3 und 4 entsprechen normalen Tonhöhen
+play 60 # :C4
+sleep 1
+
+# Diesen Ton hört man gerade noch
+play 112 # :E8
+sleep 1
+
+# Bei 119/120 ist dann Schluss
+play 120 # :C9
+sleep 1
+```
+Muss man nun einfach auswendig wissen, welcher Midiwert welcher Note entspricht? Natürlich nicht! Und man muss es auch nicht irgendwo nachschlagen, denn in Sonic Pi gibt es Funktionen, mit denen man **Midiwerte in Notennamen umwandeln kann oder umgekehrt**:
+```
+# Vom Notennamen zum Midiwert
+print :C4.to_i                       # => 60
+
+# Mit note_info(..).midi_note geht es auch
+print note_info(:C4).midi_note       # => 60
+
+# Vom Midiwert zum Notennamen
+print note_info(60).midi_string      # => C4
+
+# Notenname ohne Oktave
+print note_info(60).pitch_class      # => C
+
+# Nur die Oktave
+print note_info(60).octave           # => 4
+
+# Intervall in Halbtönen vom Grundton
+print note_info(:d4).interval        # => 2, d.h. 2 Halbtöne über Grundton C4
+
+# Wenn man alles zusammen möchte, dann erhält man eine Map
+# Später mehr dazu, was eine Map in Ruby ist
+print note_info(:C4).to_h
+
+
+# Quellen:
+# - File: sr_lang_notenamenotevalue.txt
+# - http://www.rubydoc.info/github/samaaron/sonic-pi/SonicPi/Note#resolve_midi_note-class_method
+```
+Während note_info in der Sonic Pi Hilfe dokumentiert ist, findet man die zugehörigen Funktionen dort nicht.
+#### Hertz
+Klänge sind im Grunde genommen Schwingungen. Ein typischer Instrumentenklang besteht aus den Schwingungen eines Grundtones mit seinen Obertönen. Man kann Töne deshalb auch direkt mit Frequenzen in Herz angeben:
+```
+# Kammerton A4 in Hertz
+g_hz_start = 440.0
+
+# Umgewandelt in einen Midiwert
+play hz_to_midi(g_hz_start)
+print note_info(hz_to_midi(g_hz_start)).midi_string
+sleep 1
+
+# Die Hälfte davon ist eine Oktave tiefer
+play hz_to_midi(g_hz_start/2.0)
+print note_info(hz_to_midi(g_hz_start/2.0)).midi_string
+sleep 1
+
+# midi_to_hz zeigt die Hertz für einen Midiwert an
+play :A5
+print "A4 = #{midi_to_hz(:A5)} Hertz"
+```
+## Verzweigungen / If
+## Schleifen / Loops
+
+Schleifen sind **Wiederholungen**. In einer Programmiersprache spricht man von **Loops**.
+### .times
+Die einfachste Art von Schleife ist eine, in der man etwas 2, 3 oder x Mal wiederholt. In Sonic Pi leitet man das, was man z.B. 5 Mal wiederholen möchte, mit einer Zeile `5.times do` ein. Anschliessend kommen die Zeilen, die wiederholt werden sollen. In der letzten Zeile steht ein `end`, damit wird die Wiederholung auf die eingeschlossenen Zeilen begrenzt. Den Bereich von der Zeile mit dem `do` bis zum `end` nennt man übrigens einen **Block**.
+```
+# Die zwischen do und end eingeschlossenen Zeilen werden 5 Mal wiederholt
+5.times do
+  play :C4
+  sleep 1
+end
+
+# Diese Zeilen werden nicht wiederholt und erst abgespielt, wenn die 5 Wiederholungen vorbei sind.
+play :D4
+sleep 1
+```
+### Zahlenbereich und .each
+Statt dieser einfachen Wiederholung kann ich auch einen Bereich von Ganzahlen nehmen:
+```
+# Dieser Block wird ebenfalls 5 Mal wiederholt, nur etwas komplizierter
+(60..64).each do 
+    play :C4
+    sleep 1
+  end
+```
+Bis jetzt ist das kein Vorteil gegenüber `5.times`. Interessant wird es erst, wenn wir den Wert aus der Wiederholung in den folgenden Codezeilen verwenden können. Dazu benötigen wir einen **Parameter**, mit dem wir den aktuellen Wert abspielen können. Parameter stehen in Sonic Pi in Längsstrichen (auch als Pipe-Zeichen bekannt, Alt Gr + 7) und haben einen Namen. Ich beginnen Parameter mit dem Präfix **p_**. Da die Zahl 60 ein Midiwert ist und der Note :C4 entspricht, können wir den Parameter mit play direkt abspielen:
+```
+# Wir legen die Zahlen von 60 bis 64 hintereinander im Parameter mit dem Namen p_value ab
+(60..64).each do |p_value|
+    # Parameter direkt abspielen
+    play p_value
+
+    print note_info(p_value).to_h
+    sleep 1
+  end
+```
+### Zahlenbereich mit Methode .step
+Nun tönt eine Reihe von Halbtönen nicht unbedingt sehr musikalisch. Etwas harmonischer wird es, wenn wir statt Einerschritte Viererschritte machen. Das ist möglich mit der Methode `.step`.
+```
+# Nur jeden 4. Wert spielen
+(48..72).step(4) do |p_value|
+    play p_value
+    print note_info(p_value).to_h
+    sleep 1
+  end
+```
+### Array mit .each
+Schon besser! Aber so richtig befriedigend ist auch das nicht. Die **Dur-Tonleiter mit ihren unregelmässigen Ganz- und Halbtonsprüngen** bekommt man so nicht hin. Gibt es keine einfachere Methode, die Töne einer Tonleiter zu spielen ohne jeden Ton einzeln anzugeben? Doch natürlich, sogar mehrere.
+
+Erstens kann ich die Töne in einen Behälter verpacken, einen sogenannten **Array**, und dann mit `.each` alle Töne in diesem Array abspielen. Einen Array definiere ich, indem ich eckige Klammern mache und darin die einzelnen Töne mit Komma getrennt aufzähle.
+```
+[:C4, :D4, :E4, :F4, :G4, :A4, :B4, :C5].each do |p_value|
+    play p_value
+    sleep 0.5
+  end
+```
+### Scales mit .each
+Nun haben wir zwar eine schöne Dur-Tonleiter, aber immer noch mit viel Schreibarbeit. Eigentlich sollte so etwas Elementares wie eine Tonleiter in Sonic Pi doch vorhanden sein. Ist sie natürlich auch, nur ist die Geschichte mit den Tonleitern etwas komplizierter. Es gibt nicht **die** Tonleiter, es gibt unzählige. Wer sich etwas mit Musik beschäftigt hat, kennt vermutlich neben der **Dur-Tonleiter** mindestens noch **ein oder mehrere Moll-Tonleitern**. Vielleicht habt ihr auch schon von der **Blues-Tonleiter** gehört. Und im Jazz geht es häufig um die **pentatonische Tonleiter**. 
+
+Zweitens gibt es in Sonic Pi für eine Tonleiter den Befehl `scale`. Weil es so viele Tonleitern gibt, sind mindestens 2 Parameter notwendig, um eine bestimmte Tonleiter zu definieren, nämlich der **Grundton und der Typ**. Für die gewöhnliche Dur-Tonleiter lautet die Bezeichnung `:major` oder auch `:diatonic`:
+```
+# Spiele alle Töne der Durtonleiter ausgehend von C4
+(scale :C4, :major).each do |p_value|
+    play p_value
+    sleep 1
+  end
+```
+Das Elegante an scale ist, dass man mit Änderung eines einzigen Buchstabens von CDur zu DDur wechseln kann:
+```
+# Nur der Grundton ändert und schon sind wir bei DDur
+(scale :D4, :major).each do |p_value|
+    play p_value
+    sleep 1
+  end
+```
+Wenn wir das ganze in Moll möchten, wechseln wir von :major zu `:minor`.
+```
+# Molltonleiter
+(scale :C4, :minor).each do |p_value|
+    play p_value
+    sleep 1
+  end
+```
+Probieren wir doch mal, wie eine Bluestonleiter oder eine pentatonische Tonleiter tönt:
+```
+(scale :C4, :blues_major).each do |p_value|
+    play p_value
+    print note_info(p_value).to_h
+    sleep 0.5
+  end
+
+  sleep 1
+
+  (scale :C4, :minor_pentatonic).each do |p_value|
+    play p_value
+    print note_info(p_value).to_h
+    sleep 0.5
+  end
+```
+Wenn ihr nicht glaubt, dass es fast unzählige Tonleitern gibt, dann müsst ihr nur im Original-Sonic-Pi-Editor `(scale :C4, )` schreiben und etwas warten, dann klappt ein Kontextmenü mit allen verfügbaren Tonleitern auf. Verschiedene Kulturen haben ihre eigene Tonsysteme. Ich kann nur empfehlen, Experimente mit verschiedenen Scales zu machen. Eine Tonleiter, die **alle Halbtöne** enthält, heisst übrigens `:chromatic`.
+```
+  use_synth :saw
+  (scale :C4, :chromatic).each do |p_value|
+    play p_value
+    print note_info(p_value).to_h
+    sleep 0.5
+  end
+```
+#### Attribute einer Scale
+Quelle: https://www.rubydoc.info/github/samaaron/sonic-pi/SonicPi/Scale
+```
+# Attribute einer Scale
+print (scale :C4,:ferahfeza).to_a.name
+print (scale :C4,:ferahfeza).to_a.notes
+print (scale :C4,:ferahfeza).to_a.tonic
+print (scale :C4,:ferahfeza).to_a.num_octaves
+```
+### Chords mit .each
+Es gibt in Sonic Pi nicht nur Tonleitern, sondern auch Akkorde. Sie werden ähnlich definiert wie die Tonleitern, d.h. mit einem Klammernpaar, dem Begriff `chord`, dem Grundton und der Bezeichnung. Und natürlich kann man ebenfalls über Töne eines Akkordes iterieren.
+`:major` bezeichnet bei den Akkorden einen Dur-Dreiklang. 
+```
+(chord :A4, :major).each do |p_value|
+  play p_value
+  print note_info(p_value).to_h
+  sleep 0.5
+end
+
+```
+Ohne Sleep werden alle Töne gleichzeitig gespielt:
+```
+(chord :A4, :major).each do |p_value|
+    play p_value
+    print note_info(p_value).to_h
+  end
+```
+### loop do
+Eine Schleife mit `loop do` wird ewig wiederholt. Alles unterhalb des Blocks wird deshalb gar nie ausgeführt. Wenn mehrere Loops gleichzeitig ausgeführt werden sollen, benutzt man deshalb besser den `live-loop` im nächsten Abschnitt.
+```
+# dieser loop wird ewig wiederholt
+loop do
+    sample :loop_garzul
+    sleep sample_duration(:ambi_glass_hum)
+    sleep 0.2
+  end
+  
+  # hierher kommen wir nie
+  sample :loop_amen
+```
+### Live-Loops
+```
+live_loop :sr do
+	sample :loop_safari, amp: rrand(0.9, 1.4), rate: rrand(0.9, 1), cutoff: rrand(80, 120), pan: rrand(-1, 1)
+	sample :perc_snap, amp: rrand(0.9, 1.4), rate: rrand(1.9, 2.1), cutoff: rrand(80, 120), pan: rrand(-1, 1)
+	sleep (sample_duration :loop_safari) * 1.0
+  end
+
+```
+## Filter
+### High-Pass- und Low-Pass-Filter
+Ein High-Pass-Filter, auch Low-Cut-Filter genannnt,  lässt die hohen Frequenzen durch, ein Low-Pass-Filter dagegen die tiefen:
+```
+# ADSR mit einem Highpass-Filter -> der Noise wird hoeher
+use_synth :noise
+puts current_synth
+print ":bass_highend"
+(10..130).step(10) do |p_value|
+  with_fx :hpf, cutoff: p_value do
+    play :C4, amp: 2, attack: 0, decay: 0.05, sustain: 0, release: 0
+    sleep 1
+  end
+end
+
+sleep 3
+
+# ADSR mit einem Lowpass-Filter -> der Noise wird hoeher
+# 130 ist maximaler Wert
+use_synth :bnoise
+puts current_synth
+(10..130).step(10) do |p_value|
+  print p_value
+  with_fx :lpf, cutoff: p_value do
+    play :C4, amp: 2, attack: 0, decay: 0.05, sustain: 0, release: 0
+    sleep 1
+  end
+end
+```
