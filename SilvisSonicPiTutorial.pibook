@@ -155,7 +155,9 @@ play :C4, pan: -1, amp: 2
 sleep 1
 ```
 #### Hüllkurven und ADSR
-Wenn Klänge mit einem Synthesizer erzeugt werden, dann kann man sie mit einer Hüllkurve verändern. Die Hüllkurve bestimmt, wie sich die Lautstärke eines Tons über die Zeit ändert. Oft hört man auch den Begriff ADSR. Er steht für die 4 Phasen Attack, Decay, Sustain und Release. Hüllkurven gibt es übrigens auch bei den Samples.
+Wenn Klänge mit einem Synthesizer erzeugt werden, dann kann man sie mit einer Hüllkurve verändern. Die Hüllkurve bestimmt, wie sich die Lautstärke eines Tons über die Zeit ändert. Oft hört man auch den Begriff ADSR. Er steht für die 4 Phasen Attack, Decay, Sustain und Release. Hüllkurven gibt es übrigens auch bei den Samples. Die Defaultwerte sind übrigens alle 0 ausser für **release, dort ist er 1**.
+
+Quelle: https://github.com/sonic-pi-net/sonic-pi/blob/dev/etc/doc/cheatsheets/synths.md
 ```
 # File: sr_lang_adsr.txt
 
