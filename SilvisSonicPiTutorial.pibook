@@ -2,6 +2,7 @@
 
 
 
+
 # Silvis Sonic Pi Tutorial
 ## To Do
 - Weitermachen mit Verzweigungen / If
@@ -305,6 +306,17 @@ Die Notennamen können auch **klein geschrieben** werden, z.B. `:a5`:
 use_synth :saw
 play :a5
 sleep 1
+```
+### Pausen
+Musik besteht nicht nur aus Tönen, sondern auch aus Pausen. Eine Pause schreibt man in Sonic Pi mit `:r` für rest. Sie wird mit `play :r` und sleep in der nächsten Zeile gespielt, gleich wie eine Note.
+```
+use_synth :piano 
+play :C4
+sleep 0.5
+play :r # das ist eine Pause
+sleep 0.5
+play :D4
+sleep 0.5
 ```
 ### Notennamen, Midi-Werte und Hertz
 Bis jetzt haben wir Noten v.a. über ihren Notennamen angesprochen. Man kann die Töne aber auch direkt als Ganzzahlen angeben. Dabei handelt sich um sogenannte Midiwerte. Die Midiwerte geben Halbtonschritte an: `:C4` entspricht 60, der Halbton `:Cs4` dem Midiwert 61 und `:D` dann 62. Eine **Oktave besteht aus 12 Halbtönen**. Midiwerte müssen übrigens nicht ganzzahlig sein, so etwas wie `play 62.5` ist erlaubt, d.h. wird sind jetzt einen Viertelton über :D4.
