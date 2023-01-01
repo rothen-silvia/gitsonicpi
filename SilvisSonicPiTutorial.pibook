@@ -3,6 +3,7 @@
 
 
 
+
 # Silvis Sonic Pi Tutorial
 ## To Do
 - Weitermachen mit Verzweigungen / If
@@ -596,4 +597,133 @@ puts current_synth
     sleep 1
   end
 end
+```
+## Zufall
+```
+# rrand_i liefert einen zufälligen Wert von 0 bis und mit 5, allerdings bei jedem Durchgang denselben
+print rrand_i(0,5)
+```
+```
+print rrand_i(0,5)
+print rrand_i(0,5)
+print rrand_i(0,5)
+```
+```
+# damit man bei jedem Lauf etwas andere Werte erhält
+print Time.new
+print Time.new.to_i
+use_random_seed Time.new.to_i
+print rrand_i(0,5)
+```
+```
+# ein Array mit zufälligen Werten
+g_arr = (65..70).to_a.shuffle
+print g_arr
+print (65..70).to_a.shuffle
+```
+## Fortgeschrittene Programmierthemen
+### Benannte Parameter
+Wenn viele Parameter in eine Methode oder Funktion übergeben werden, dann ist es praktisch, mit benannten Parametern zu arbeiten. Allerdings funktioniert das nur mit der Ruby-Schreibweise `def`, nicht aber mit dem Sonic Pi eingenen `define`.
+```
+# Source: https://stackoverflow.com/questions/15308163/named-parameters-in-ruby-2
+# to use named parameters, every parameter must have a default value
+def f_chord(p_tonic: :C4, p_name: :maj, p_length: 6, p_is_reverse: false)
+  if p_is_reverse
+    return (chord p_tonic, p_name, num_octaves: 5).take(p_length).reverse
+  else
+    return (chord p_tonic, p_name, num_octaves: 5).take(p_length)
+  end
+end
+
+play_chord f_chord
+sleep 1
+
+play_chord f_chord(p_name: :min)
+sleep 1
+
+play_chord f_chord(p_tonic: :F4)
+sleep 1
+
+# play up
+f_chord(p_length:5).each do |p_note|
+  play p_note
+  sleep 0.5
+end
+```
+Das Bedürfnis kam auf, als ich einen konfigurierbaren Arpeggiator schreiben wollte. Relativ bald wurde die Parameterliste ziemlich unübersichtlich.
+```
+# File: sr_chords_arpeggiator2.txt
+
+# p_tonic Notennamen
+# p_name Akkordnamen
+# p_length Anzahl unterschiedliche Noten im Arpeggio
+# p_invert Inversion 0, 1 oder 2 des Akkordes
+# p_sleep Anzahl Schläge für das gesamte Arpeggio
+# p_type: 0 aufsteigend, 1 absteigend, 2 zuerst auf- dann absteigend 3 zuerst ab- dann aufsteigend
+# p_random fügt mehr Noten hinzu als Anzahl -> .shuffle führt zu zufälligem Element
+# p_has_basenote soll Grundton dazu gespielt werden
+def m_play_arpeggio(p_tonic: 60, p_name: :maj, p_length: 3, p_invert: 0, p_sleep: 2,
+                    p_type: 0, p_random: 0, p_has_basenote: false, p_has_droplastnote: true)
+  # damit sich die Zufallswerte nicht wiederholen
+  use_random_seed Time.new.to_i
+  
+  # Chord definieren
+  l_chord = (chord p_tonic, p_name, num_octaves: 4)
+  
+  # Inversion
+  l_chord = l_chord.drop(p_invert)
+  
+  l_basenote = l_chord.take(1) - 12
+  print l_basenote
+  
+  # Wir holen aus jedem beliebigen Chord diese Anzahl Noten + p_random
+  l_chord = l_chord.take(p_length + p_random)
+  print l_chord.notes
+  
+  # Jetzt mischeln wir diese, nehmen die ersten gemäss Anzahl und Sortieren
+  l_chord = l_chord.shuffle.take(p_length).sort
+  print l_chord.notes
+  
+  if p_type == 1 # absteigend
+    l_chord = l_chord.reverse
+  else
+    if p_type == 2 # auf- dann absteigend
+      # Mit .reflect hängen wir die Noten absteigend an
+      l_chord = l_chord.reflect
+    else
+      if p_type == 3 # ab- dann aufsteigend
+        l_chord = l_chord.reverse.reflect
+      end
+    end
+  end
+  
+  # jetzt eventuell noch die letzte Note entfernen
+  if p_has_droplastnote == true && p_type > 1
+    l_chord = l_chord.drop_last(1)
+  end
+  
+  print l_chord.notes
+  p_length_arp = l_chord.length
+  
+  # spiele einen Grundton
+  if p_has_basenote
+    play l_basenote, sustain: p_sleep
+  end
+  
+  l_chord.each do |p_note|
+    play p_note
+    sleep p_sleep * 1.0 / p_length_arp
+  end
+  
+end
+
+use_synth :tri
+
+m_play_arpeggio(p_name: :min, p_length: 4, p_type: 3, p_has_basenote: false)
+sleep 0.25
+m_play_arpeggio(p_name: :min, p_length: 5, p_invert: 1, p_sleep: 1)
+sleep 0.25
+m_play_arpeggio(p_name: :min, p_length: 6, p_invert: 2, p_type: 1)
+sleep 0.25
+m_play_arpeggio(p_name: :min, p_length: 6, p_type: 2)
 ```
