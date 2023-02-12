@@ -4,6 +4,12 @@
 
 
 
+
+
+
+
+
+
 # Silvis Sonic Pi Tutorial
 ## To Do
 - Weitermachen mit Verzweigungen / If
@@ -25,6 +31,11 @@ C:\Program Files\Sonic Pi\app\
 In Visual Studio Code müssen die Sonic Pi Dateien die Endung **.pi** haben, damit sie abgespielt werden.
 
 In einem Jupyter-Notebook können die Sonic Pi Schnippsel mit dem Run-Icon links vom Code-Block abgespielt werden. Das Stoppen über dieses Icon funktioniert nicht immer. **Alt + S** oder **Ctrl + Shift + P - Sonic Pi: Stop** funktioniert dagegen fast immer. Falls das auch nicht funktioniert, Visual Studio Code schliessen und notfalls sogar alle VSC-Instanzen im Task Manager stoppen.
+
+Wenn das Abspielen im Notebook nicht mehr funktioniert, dann liegt es unter Windows 10 möglicherweise am **Zugriff auf das Mikrophon**. Wenn man möchte, dass Sonic Pi bzw. der darunterliegende SuperCollider (scsynth) darauf zugreifen darf, dann muss sicherstellen, dass unter "Desktop-Apps den Zugriff auf ihr Mikrofon erlauben" auf "Ein" steht und scsynth.exe in der Liste vorkommt.
+Wenn man den Zugriff unterbinden möchte, dann sucht man im eigenen Userverzeichnis "\.sonic-pi\config\audio-settings.toml" und editiert die folgende Zeile:
+
+**enable_inputs = false**
 
 ## Basics
 
@@ -460,6 +471,33 @@ Nun tönt eine Reihe von Halbtönen nicht unbedingt sehr musikalisch. Etwas harm
     sleep 1
   end
 ```
+### Anzahl Schritte versus Schrittlänge
+Statt die Schrittlänge anzugeben wie oben kann man auch die Anzahl Schritte angeben. Dann benutzt man statt eine Zahlenrange die Funktion `line`.
+
+Die drei Routinen unten erzeugen eine Abfolge in Zehnerschritten von 57 bis 127:
+```
+8.times do
+  #macht 8 10-Schritte von 57 bis und mit 127 (wegen inclusive: true)
+  print (line 57, 127, steps: 8, inclusive: true).tick
+end
+
+print "range 1"
+# tick_reset ist notwendig, damit der 2. Loop sicher wieder bei 0 beginnt
+tick_reset
+8.times do
+  # dasselbe mit Vorgabe der Schrittlänge
+  print (57..127).step(10).tick
+end
+
+
+print "range 2"
+# tick_reset ist notwendig, damit der 2. Loop sicher wieder bei 0 beginnt
+tick_reset
+8.times do
+  # dasselbe mit Vorgabe der Schrittlänge
+  print (range 57, 127, step: 10, inclusive: true).tick
+end
+```
 ### Array mit .each
 Schon besser! Aber so richtig befriedigend ist auch das nicht. Die **Dur-Tonleiter mit ihren unregelmässigen Ganz- und Halbtonsprüngen** bekommt man so nicht hin. Gibt es keine einfachere Methode, die Töne einer Tonleiter zu spielen ohne jeden Ton einzeln anzugeben? Doch natürlich, sogar mehrere.
 
@@ -571,6 +609,8 @@ live_loop :sr do
   end
 
 ```
+## Arrays, Maps, Rings
+In jeder Programmiersprache existieren Container, in welche mehrere Elemente ablegen kann. Sie werden oft unter dem Begriff collections, d.h. Sammlungen zusammengefasst. Wir haben schon solche Collections von Sonic Pi kennengelernt, nämlich Scales und Chords. Beides sind Sammlungen von Tönen. Und wir haben Arrays kennengelernt, in die man beliebige Elemente verpacken kann. 
 ## Filter
 ### High-Pass- und Low-Pass-Filter
 Ein High-Pass-Filter, auch Low-Cut-Filter genannnt,  lässt die hohen Frequenzen durch, ein Low-Pass-Filter dagegen die tiefen:
@@ -605,11 +645,13 @@ end
 # rrand_i liefert einen zufälligen Wert von 0 bis und mit 5, allerdings bei jedem Durchgang denselben
 print rrand_i(0,5)
 ```
+
 ```
 print rrand_i(0,5)
 print rrand_i(0,5)
 print rrand_i(0,5)
 ```
+
 ```
 # damit man bei jedem Lauf etwas andere Werte erhält
 print Time.new
@@ -617,12 +659,16 @@ print Time.new.to_i
 use_random_seed Time.new.to_i
 print rrand_i(0,5)
 ```
+
 ```
 # ein Array mit zufälligen Werten
 g_arr = (65..70).to_a.shuffle
 print g_arr
 print (65..70).to_a.shuffle
 ```
+## Synchronisation
+### Tick und Look
+### Sync und Cue
 ## Fortgeschrittene Programmierthemen
 ### Benannte Parameter
 Wenn viele Parameter in eine Methode oder Funktion übergeben werden, dann ist es praktisch, mit benannten Parametern zu arbeiten. Allerdings funktioniert das nur mit der Ruby-Schreibweise `def`, nicht aber mit dem Sonic Pi eingenen `define`.
@@ -728,4 +774,34 @@ sleep 0.25
 m_play_arpeggio(p_name: :min, p_length: 6, p_invert: 2, p_type: 1)
 sleep 0.25
 m_play_arpeggio(p_name: :min, p_length: 6, p_type: 2)
+```
+### Arrays verschachteln mit .zip
+Um Noten mit Zeitwerten zu kombinieren, ist es praktisch, wenn man aus 2 Arrays 1 verschachtelten Array erzeugen kann. Dazu gibt es die Array-Methode `.zip`. Seine Tücken hat `.zip`, wenn die Arrays nicht gleich lang sind:
+```
+g_notes = [:C4, :d4]
+g_times_short = [0.2, 0.5]
+g_times_long = [0.25, 1, 0.5, 0.25, 0.25]
+
+# .zip ergibt verschachtelten Array
+# mit allen Elementen des ersten kombiniert mit den Elementen des zweiten
+print g_notes.zip(g_times_short)          # [[:C4, 0.2], [:d4, 0.5]]
+# fehlende Elemente des 2. Arrays werden mit nil aufgefüllt
+print g_notes.zip([0.25])                 # [[:C4, 0.25], [:d4, nil]]
+# einen Array wiederholen
+print [0.25]*4                            # [0.25, 0.25, 0.25, 0.25]
+print g_times_short * 2                   # [0.2, 0.5, 0.2, 0.5]
+print g_notes.zip([0.25]*g_notes.length)  # [[:C4, 0.25], [:d4, 0.25]]
+# 1. Array ist kuerzer als 2. Array -> Gesamtlaenge 
+print g_notes.zip(g_times_long)           # [[:C4, 0.25], [:d4, 1]]
+# so kombiniert man mehrere Arrays
+print g_notes.zip(g_times_short,g_times_short) # [[:C4, 0.2, 0.2], [:d4, 0.5, 0.5]]
+
+# damit lässt sich ein Pattern für Arpeggios zusammensetzen
+g_pos = [0,1,2,1,3,2,1,2]
+g_amp = [1,0.7,0.7,0.7]*2
+g_sleep = [0.25] * g_pos.length
+my_arpeggio_4_asc_guitar1 = g_pos.zip(g_sleep, g_amp, g_sleep)
+print my_arpeggio_4_asc_guitar1
+
+# Quelle für Arpeggio: http://www-b.uec.tmu.ac.jp/shakuhachi/SonicPi/#Arpeggio
 ```
